@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tenacity</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4d6bff" />
 </head>
 <body>
   <div class="container">
     <img src="assets/icons/logo.png" alt="Tenacity Logo" class="logo" />
     <h1>Tenacity</h1>
     <div class="bio-box">
-        <p>Simple counter which can help you to track of your no fap progress</p>
-      </div>
+      <p>Simple counter which can help you to track of your no fap progress</p>
+    </div>
 
     <div class="timer-section">
       <div class="brick-box">
@@ -40,11 +42,20 @@
     <div class="log-section">
       <h2>Relapse Log</h2>
       <button id="relapseBtn">Relapsed</button>
+      <button id="exportBtn">Export Log</button>
+      <button id="importBtn">Import Log</button>
       <ul id="logList"></ul>
       <button id="clearLogBtn">Clear History</button>
     </div>
   </div>
   <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => {
+        console.error("Service worker registration failed:", err);
+      });
+    }
+  </script>
   <footer class="footer">
     Made with <span class="highlight">♡</span> by <span class="highlight">Haitham Aouati</span>
   </footer>
