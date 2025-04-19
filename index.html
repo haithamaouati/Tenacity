@@ -5,58 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tenacity</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#4d6bff" />
 </head>
 <body>
-  <div class="container">
+  <div class="container" role="main">
     <img src="assets/icons/logo.png" alt="Tenacity Logo" class="logo" />
     <h1>Tenacity</h1>
     <div class="bio-box">
-      <p>Simple counter which can help you to track of your no fap progress</p>
+      <p>Simple counter to track your no fap progress</p>
     </div>
 
-    <div class="timer-section">
+    <div class="timer-section" role="region" aria-label="Timer Section">
       <div class="brick-box">
-        <p id="daysCounter">00 days</p>
+        <p id="daysCounter" aria-label="Days Counter">00 days</p>
       </div>
       <div class="brick-box smaller">
-        <p id="timer">00:00:00</p>
+        <p id="timer" aria-label="Timer">00:00:00</p>
       </div>
     </div>
-    <div class="progress-container">
+
+    <div class="progress-container" role="progressbar" aria-label="Progress Bar">
       <div class="progress-bar" id="progressBar"></div>
     </div>
 
-    <div class="quote-box">
+    <div class="quote-box" role="region" aria-label="Motivational Quote">
       <p id="quoteText">"Stay strong."</p>
       <p id="quoteAuthor">- Unknown</p>
     </div>
 
-    <div class="rank-box">
+    <div class="rank-box" role="region" aria-label="Rank Information">
       <h3>My Rank:</h3>
       <p id="rankName">Scout</p>
       <div id="allRanks" class="all-ranks"></div>
     </div>
 
-    <div class="log-section">
+    <div class="log-section" role="region" aria-label="Relapse Log">
       <h2>Relapse Log</h2>
       <button id="relapseBtn">Relapsed</button>
-      <button id="exportBtn">Export Log</button>
-      <button id="importBtn">Import Log</button>
       <ul id="logList"></ul>
       <button id="clearLogBtn">Clear History</button>
+      <button id="exportBtn">Export Log</button>
+      <label for="importFile" class="import-label">Import Log</label>
+      <input type="file" id="importFile" accept=".json" />
     </div>
   </div>
+
   <script src="script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(err => {
-        console.error("Service worker registration failed:", err);
-      });
-    }
-  </script>
-  <footer class="footer">
+  <footer class="footer" role="contentinfo">
     Made with <span class="highlight">♡</span> by <span class="highlight">Haitham Aouati</span>
   </footer>
 </body>
