@@ -28,6 +28,14 @@ h1 {
   color: #4d6bff;
 }
 
+.bio-box {
+  margin-top: 1.5rem;
+  background: #171717;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #2c2c2c;
+}
+
 .timer-section {
   display: flex;
   justify-content: center;
