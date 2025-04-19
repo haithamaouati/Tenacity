@@ -21,7 +21,11 @@ body {
 .logo {
   width: 90px;
   height: auto;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
+}
+
+h1 {  
+  color: #4d6bff;
 }
 
 .timer-section {
