@@ -3,12 +3,12 @@ const timer = document.getElementById('timer');
 const quoteText = document.getElementById('quoteText');
 const quoteAuthor = document.getElementById('quoteAuthor');
 const relapseBtn = document.getElementById('relapseBtn');
-const exportBtn = document.getElementById('exportBtn');
-const importBtn = document.getElementById('importBtn');
 const logList = document.getElementById('logList');
 const clearLogBtn = document.getElementById('clearLogBtn');
 const rankNameEl = document.getElementById('rankName');
 const progressBar = document.getElementById('progressBar');
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
 
 let startTime = localStorage.getItem('startTime');
 if (!startTime) {
@@ -35,20 +35,22 @@ const ranks = [
   { title: "Field Marshal", days: 240 },
   { title: "Grand Marshal", days: 300 },
   { title: "High Overlord", days: 365 },
-  { title: "The Immortal", days: 500 },
-  { title: "Ascended", days: 1000 } // Easter egg rank
+  { title: "The Immortal", days: 500 }
 ];
 
 function updateRank(days) {
   let currentRank = "Unranked";
   let currentRankIndex = -1;
+
   for (let i = 0; i < ranks.length; i++) {
     if (days >= ranks[i].days) {
       currentRank = ranks[i].title;
       currentRankIndex = i;
     } else break;
   }
+
   rankNameEl.textContent = currentRank;
+
   const allRanksEl = document.getElementById('allRanks');
   allRanksEl.innerHTML = '';
   ranks.forEach((rank, i) => {
@@ -58,7 +60,8 @@ function updateRank(days) {
     rankEl.textContent = `${rank.title} (${rank.days}d)`;
     allRanksEl.appendChild(rankEl);
   });
-  progressBar.style.width = `${Math.min((days / 1000) * 100, 100)}%`;
+
+  progressBar.style.width = `${Math.min((days / 500) * 100, 100)}%`;
 }
 
 function updateTimer() {
@@ -68,38 +71,36 @@ function updateTimer() {
   const hours = Math.floor((elapsed / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
   const seconds = Math.floor((elapsed / 1000) % 60);
+
   daysCounter.textContent = `${days.toString().padStart(2, '0')} days`;
   timer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   updateRank(days);
 }
 
 function updateQuote() {
-  const cached = JSON.parse(localStorage.getItem('cachedQuote') || '{}');
-  const twelveHrs = 1000 * 60 * 60 * 12;
+  const cached = localStorage.getItem('quoteCache');
+  const cacheTime = localStorage.getItem('quoteCacheTime');
 
-  if (cached.timestamp && (Date.now() - cached.timestamp < twelveHrs)) {
-    quoteText.textContent = `"${cached.text}"`;
-    quoteAuthor.textContent = `- ${cached.author}`;
-    return;
+  if (cached && cacheTime && Date.now() - cacheTime < 12 * 60 * 60 * 1000) {
+    const quote = JSON.parse(cached);
+    quoteText.textContent = `"${quote.text}"`;
+    quoteAuthor.textContent = `- ${quote.author}`;
+  } else {
+    fetch('data/quotes.json')
+      .then(res => res.json())
+      .then(data => {
+        const quote = data[Math.floor(Math.random() * data.length)];
+        quoteText.textContent = `"${quote.text}"`;
+        quoteAuthor.textContent = `- ${quote.author}`;
+        localStorage.setItem('quoteCache', JSON.stringify(quote));
+        localStorage.setItem('quoteCacheTime', Date.now());
+      })
+      .catch(err => {
+        console.error('Failed to load quotes:', err);
+        quoteText.textContent = `"Keep going."`;
+        quoteAuthor.textContent = "- Unknown";
+      });
   }
-
-  fetch('data/quotes.json')
-    .then(res => res.json())
-    .then(data => {
-      const index = Math.floor(Math.random() * data.length);
-      const quote = data[index];
-      quoteText.textContent = `"${quote.text}"`;
-      quoteAuthor.textContent = `- ${quote.author}`;
-      localStorage.setItem('cachedQuote', JSON.stringify({
-        text: quote.text,
-        author: quote.author,
-        timestamp: Date.now()
-      }));
-    })
-    .catch(() => {
-      quoteText.textContent = `"Keep going."`;
-      quoteAuthor.textContent = "- Unknown";
-    });
 }
 
 function updateLog() {
@@ -112,8 +113,13 @@ function updateLog() {
 }
 
 relapseBtn.addEventListener('click', () => {
+  if (!confirm("Are you sure you want to log a relapse?")) return;
   const note = prompt("What caused the relapse? (Optional)");
-  const entry = { time: Date.now(), note: note?.trim() || '' };
+  const entry = {
+    time: Date.now(),
+    note: note ? note.trim() : ''
+  };
+
   log.push(entry);
   localStorage.setItem('log', JSON.stringify(log));
   startTime = Date.now();
@@ -122,7 +128,7 @@ relapseBtn.addEventListener('click', () => {
 });
 
 clearLogBtn.addEventListener('click', () => {
-  if (confirm("Clear the entire relapse history?")) {
+  if (confirm("Are you sure you want to clear the entire relapse history?")) {
     log = [];
     localStorage.removeItem('log');
     updateLog();
@@ -131,38 +137,32 @@ clearLogBtn.addEventListener('click', () => {
 
 exportBtn.addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = 'tenacity-log.json';
+  a.href = URL.createObjectURL(blob);
+  a.download = 'relapse_log.json';
   a.click();
-  URL.revokeObjectURL(url);
 });
 
-importBtn.addEventListener('click', () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const imported = JSON.parse(reader.result);
-        if (Array.isArray(imported)) {
-          log = imported;
-          localStorage.setItem('log', JSON.stringify(log));
-          updateLog();
-        } else {
-          alert("Invalid format.");
-        }
-      } catch {
-        alert("Failed to import log.");
+importFile.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported)) {
+        log = imported;
+        localStorage.setItem('log', JSON.stringify(log));
+        updateLog();
+      } else {
+        throw new Error("Invalid file format");
       }
-    };
-    reader.readAsText(file);
+    } catch (err) {
+      alert("Failed to import log file.");
+      console.error(err);
+    }
   };
-  input.click();
+  reader.readAsText(file);
 });
 
 updateLog();
