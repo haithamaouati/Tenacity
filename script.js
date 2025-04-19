@@ -3,6 +3,8 @@ const timer = document.getElementById('timer');
 const quoteText = document.getElementById('quoteText');
 const quoteAuthor = document.getElementById('quoteAuthor');
 const relapseBtn = document.getElementById('relapseBtn');
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
 const logList = document.getElementById('logList');
 const clearLogBtn = document.getElementById('clearLogBtn');
 const rankNameEl = document.getElementById('rankName');
@@ -33,39 +35,30 @@ const ranks = [
   { title: "Field Marshal", days: 240 },
   { title: "Grand Marshal", days: 300 },
   { title: "High Overlord", days: 365 },
-  { title: "The Immortal", days: 500 }
+  { title: "The Immortal", days: 500 },
+  { title: "Ascended", days: 1000 } // Easter egg rank
 ];
 
 function updateRank(days) {
   let currentRank = "Unranked";
   let currentRankIndex = -1;
-
   for (let i = 0; i < ranks.length; i++) {
     if (days >= ranks[i].days) {
       currentRank = ranks[i].title;
       currentRankIndex = i;
-    } else {
-      break;
-    }
+    } else break;
   }
-
   rankNameEl.textContent = currentRank;
-
   const allRanksEl = document.getElementById('allRanks');
   allRanksEl.innerHTML = '';
   ranks.forEach((rank, i) => {
     const rankEl = document.createElement('div');
     rankEl.classList.add('rank-item');
-    if (i === currentRankIndex) {
-      rankEl.classList.add('current');
-    }
+    if (i === currentRankIndex) rankEl.classList.add('current');
     rankEl.textContent = `${rank.title} (${rank.days}d)`;
     allRanksEl.appendChild(rankEl);
   });
-
-  // Progress bar logic
-  const progressPercent = Math.min((days / 500) * 100, 100);
-  progressBar.style.width = `${progressPercent}%`;
+  progressBar.style.width = `${Math.min((days / 1000) * 100, 100)}%`;
 }
 
 function updateTimer() {
@@ -75,14 +68,21 @@ function updateTimer() {
   const hours = Math.floor((elapsed / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((elapsed / (1000 * 60)) % 60);
   const seconds = Math.floor((elapsed / 1000) % 60);
-
   daysCounter.textContent = `${days.toString().padStart(2, '0')} days`;
   timer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
   updateRank(days);
 }
 
 function updateQuote() {
+  const cached = JSON.parse(localStorage.getItem('cachedQuote') || '{}');
+  const twelveHrs = 1000 * 60 * 60 * 12;
+
+  if (cached.timestamp && (Date.now() - cached.timestamp < twelveHrs)) {
+    quoteText.textContent = `"${cached.text}"`;
+    quoteAuthor.textContent = `- ${cached.author}`;
+    return;
+  }
+
   fetch('data/quotes.json')
     .then(res => res.json())
     .then(data => {
@@ -90,9 +90,13 @@ function updateQuote() {
       const quote = data[index];
       quoteText.textContent = `"${quote.text}"`;
       quoteAuthor.textContent = `- ${quote.author}`;
+      localStorage.setItem('cachedQuote', JSON.stringify({
+        text: quote.text,
+        author: quote.author,
+        timestamp: Date.now()
+      }));
     })
-    .catch(err => {
-      console.error('Failed to load quotes:', err);
+    .catch(() => {
       quoteText.textContent = `"Keep going."`;
       quoteAuthor.textContent = "- Unknown";
     });
@@ -109,25 +113,56 @@ function updateLog() {
 
 relapseBtn.addEventListener('click', () => {
   const note = prompt("What caused the relapse? (Optional)");
-  const entry = {
-    time: Date.now(),
-    note: note ? note.trim() : ''
-  };
-
+  const entry = { time: Date.now(), note: note?.trim() || '' };
   log.push(entry);
   localStorage.setItem('log', JSON.stringify(log));
-
   startTime = Date.now();
   localStorage.setItem('startTime', startTime);
   updateLog();
 });
 
 clearLogBtn.addEventListener('click', () => {
-  if (confirm("Are you sure you want to clear the entire relapse history?")) {
+  if (confirm("Clear the entire relapse history?")) {
     log = [];
     localStorage.removeItem('log');
     updateLog();
   }
+});
+
+exportBtn.addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tenacity-log.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+importBtn.addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const imported = JSON.parse(reader.result);
+        if (Array.isArray(imported)) {
+          log = imported;
+          localStorage.setItem('log', JSON.stringify(log));
+          updateLog();
+        } else {
+          alert("Invalid format.");
+        }
+      } catch {
+        alert("Failed to import log.");
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 });
 
 updateLog();
