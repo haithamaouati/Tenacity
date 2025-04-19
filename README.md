@@ -1,5 +1,7 @@
 # Tenacity
 
+![logo](https://raw.githubusercontent.com/haithamaouati/Tenacity/refs/heads/main/assets/icons/logo.png)
+
 Simple counter which can help you to track of your no fap progress
 
 **Tenacity** is an simple web app designed for people who want to try change their lives.
