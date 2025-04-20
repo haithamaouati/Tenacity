@@ -11,4 +11,4 @@ Each time you reset counter you can put a note to the history, so you can later 
 Are you ready to become a man of **focus**, **commitment**, and **sheer will**? [Tenacity](https://haithamaouati.github.io/Tenacity/)
 
 ## Screenshot
-![screenshot]()
+![screenshot](https://raw.githubusercontent.com/haithamaouati/Tenacity/refs/heads/main/screenshot.png)
